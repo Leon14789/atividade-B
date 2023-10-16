@@ -1,0 +1,104 @@
+
+CREATE TABLE Marcas (
+    mrc_id INT AUTO_INCREMENT PRIMARY KEY,
+    mrc_nome VARCHAR(255) NOT NULL,
+    mar_nacionalidade VARCHAR(255)
+);
+
+
+CREATE TABLE Produtos (
+    prod_id INT AUTO_INCREMENT PRIMARY KEY,
+    prod_nome VARCHAR(255),
+    prd_qta_estoque INT NOT NULL,
+    prd_qta_estoque_min INT NOT NULL,
+    prd_data_fabricacao TIMESTAMP,
+    prd_perecivel BOOLEAN,
+    prd_valor DECIMAL(10, 2),
+    prd_marca_id INT,
+    FOREIGN KEY (prd_marca_id) REFERENCES Marcas(mrc_id)
+);
+
+
+CREATE TABLE Fornecedores (
+    frn_id INT PRIMARY KEY,
+    frn_nome VARCHAR(255),
+    frn_email VARCHAR(255)
+);
+
+CREATE TABLE Produto_Fornecedor (
+    pf_prod_id INT,
+    pf_forn_id INT,
+    PRIMARY KEY (pf_prod_id, pf_forn_id),
+    FOREIGN KEY (pf_prod_id) REFERENCES Produtos(prod_id),
+    FOREIGN KEY (pf_forn_id) REFERENCES Fornecedores(frn_id)
+);
+
+
+INSERT INTO Marcas (mrc_nome, mar_nacionalidade) VALUES
+    ('Marca A', 'Nacionalidade A'),
+    ('Marca B', 'Nacionalidade B'),
+    ('Marca C', 'Nacionalidade C'),
+    ('Marca D', 'Nacionalidade D'),
+    ('Marca E', 'Nacionalidade E');
+
+
+INSERT INTO Produtos (prod_nome, prd_qta_estoque, prd_qta_estoque_min, prd_data_fabricacao, prd_perecivel, prd_valor, prd_marca_id) VALUES
+    ('Produto 1', 100, 10, '2023-01-15', TRUE, 25.99, 1),
+    ('Produto 2', 50, 5, '2023-02-20', FALSE, 12.50, 2),
+    ('Produto 3', 75, 8, '2023-03-10', TRUE, 19.99, 3),
+    ('Produto 4', 30, 3, '2023-04-05', FALSE, 8.99, 1),
+    ('Produto 5', 60, 6, '2023-05-15', TRUE, 29.99, 4);
+
+
+INSERT INTO Fornecedores (frn_id, frn_nome, frn_email) VALUES
+    (1, 'Fornecedor A', 'fornecedorA@example.com'),
+    (2, 'Fornecedor B', 'fornecedorB@example.com'),
+    (3, 'Fornecedor C', 'fornecedorC@example.com');
+
+
+INSERT INTO Produto_Fornecedor (pf_prod_id, pf_forn_id) VALUES
+    (1, 1),
+    (2, 1),
+    (2, 2),
+    (3, 2),
+    (4, 3);
+
+
+CREATE VIEW ProdutosComMarcas AS
+SELECT p.prod_id, p.prod_nome, m.mrc_nome AS marca
+FROM Produtos p
+INNER JOIN Marcas m ON p.prd_marca_id = m.mrc_id;
+
+
+CREATE VIEW ProdutosComFornecedores AS
+SELECT pf.pf_prod_id, pf.pf_forn_id, pr.prod_nome, f.frn_nome AS fornecedor
+FROM Produto_Fornecedor pf
+INNER JOIN Produtos pr ON pf.pf_prod_id = pr.prod_id
+INNER JOIN Fornecedores f ON pf.pf_forn_id = f.frn_id;
+
+
+CREATE VIEW ProdutosComMarcasEFornecedores AS
+SELECT p.prod_id, p.prod_nome, m.mrc_nome AS marca, f.frn_nome AS fornecedor
+FROM Produtos p
+INNER JOIN Marcas m ON p.prd_marca_id = m.mrc_id
+LEFT JOIN Produto_Fornecedor pf ON p.prod_id = pf.pf_prod_id
+LEFT JOIN Fornecedores f ON pf.pf_forn_id = f.frn_id;
+
+
+CREATE VIEW ProdutosComEstoqueAbaixoMinimo AS
+SELECT prod_id, prod_nome, prd_qta_estoque, prd_qta_estoque_min
+FROM Produtos
+WHERE prd_qta_estoque < prd_qta_estoque_min;
+
+
+ALTER TABLE Produtos ADD prd_data_validade DATE;
+
+INSERT INTO Produtos (prod_nome, prd_qta_estoque, prd_qta_estoque_min, prd_data_fabricacao, prd_perecivel, prd_valor, prd_marca_id, prd_data_validade) VALUES
+    ('Produto 6', 20, 2, '2023-06-10', TRUE, 39.99, 5, '2023-12-31'),
+    ('Produto 7', 40, 4, '2023-07-15', FALSE, 15.99, 1, '2023-11-30');
+
+
+CREATE VIEW ProdutosComValidadeVencida AS
+SELECT prod_id, prod_nome, prd_data_validade
+FROM Produtos
+WHERE prd_data_validade < CURDATE();
